@@ -6,26 +6,26 @@ import multiprocessing as mp
 from fastapi.encoders import jsonable_encoder
 from pymongo import MongoClient
 
-mongo_client = MongoClient('localhost', 27017)
-db = mongo_client.file_manager
-col = db.file_collection
 
-def read_files(url):
+def read_files(url: str) -> tuple:
+    """
+    Get the url for the respective blob. Connect and download it, then extract the files in memory (not disk), and call render_files
+    function to extract data from files and save them in DB.
+
+    :return, a tuble of metadata result and message to show in browser, indicating the number of rendered files and response status.
+    """
     url_parts = url_splitter(url)
     account_url = url_parts['account_url']
     account_key = url_parts['account_key']
     container_name = url_parts['container_name']
     blob_name = url_parts['blob_name']
 
-    # TODO Error handling message
     blob_service_client_instance = BlobServiceClient(
         account_url=account_url, credential=account_key)
 
-    # TODO Error handling message
     blob_client_instance = blob_service_client_instance.get_blob_client(
         container_name, blob_name, snapshot=None)
 
-    # TODO Error handling message 
     blob_data = blob_client_instance.download_blob()
     
     data = blob_data.readall()
@@ -34,15 +34,21 @@ def read_files(url):
     myzip = ZipFile(inmem)
 
     file_list = [(name, myzip.read(name)) for name in myzip.namelist()]
-    file_number = len(file_list)
-
-    result_message = {'Rendered Files': file_number, 'Message': 'Ok' if file_number > 0 else 'Error' }
     render_files(file_list)
+    
+    file_number = len(file_list)
+    result = {'Rendered Files': file_number, 'Message': 'Ok' if file_number > 0 else 'Error' }
+    message = "Files are retrieved successfully" if file_number > 0 else "Error in rendering the files."
 
-    return(result_message, "Files are retrieved successfully")
+    return(result, message)
 
-def url_splitter(url):
-    #TODO: add unit test
+
+def url_splitter(url: str) -> dict:
+    """
+    Split the given url to extract required information to connect to the blob and download it.
+    
+    :return, the config information as a dictionary.
+    """
     protocol_part = url.split('://')
     url_parts = protocol_part[1].split('/')
     account_url = protocol_part[0]  + '://' + url_parts[0]
@@ -59,14 +65,28 @@ def url_splitter(url):
     }
 
 
-def render_files(files_list):
+def render_files(files_list: list):
+    """
+    Get the list of files, concerrently (by the multiprocessing approach) render demmanded fields (info) from each and then save the lis as a
+    bulk in the mongodb.
+    """
+
+    # DB connection info
+    mongo_client = MongoClient('localhost', 27017)
+    db = mongo_client.file_manager
+    col = db.file_collection
     
     with mp.Pool() as pool:
         res = pool.map(render_file_data, files_list)
         col.insert_many(res)
 
 
-def render_file_data(xml_tuple):
+def render_file_data(xml_tuple: tuple) -> dict:
+    """
+    Get the tuple of xml file as a string and the name of the file, then extract the demmanded tags' values (info).
+    
+    :return, the dictionary of file data together with the file name.
+    """
     tree=tree=ElementTree(fromstring(xml_tuple[1]))
     root=tree.getroot()
     data = {}
@@ -117,14 +137,19 @@ def render_file_data(xml_tuple):
     else:
         data['application'] = None
 
+    # add the name of the file as a field in the data document.
     data['file_name'] = xml_tuple[0]
 
     return data
 
 
-def parseXmlToJson(xml):
+def parseXmlToJson(xml: str) -> list:
+    """
+    Get the xml data as a string, and render it as a json. It's used to extract the nested tags info.
+
+    :return, the list of all nested tags as the json records.
+    """
     response = {}
-  
     for child in list(xml):
         if len(list(child)) > 0:
             if child.tag in response:
