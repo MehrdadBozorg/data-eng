@@ -18,13 +18,14 @@ def xmldata_helper(xmldata) -> dict:
         "abstract": xmldata["abstract"],
         "publication_year": xmldata["publication_year"],
         "application": xmldata["application"],
+        "file_name": xmldata["file_name"],
     }
 
 
-async def do_insert_many(file_list):
-    result = await file_collection.insert_many(
+def do_insert_many(file_list):
+    result = file_collection.insert_many(
         file_list)
-    print('inserted %d docs' % (len(result.inserted_ids),))
+    return {'msg': result}
 
 
 # Add a new file into to the database
@@ -39,6 +40,7 @@ async def retrieve_files():
     files_data = []
     async for file in file_collection.find():
         files_data.append(xmldata_helper(file))
+    print('files are: ', files_data)
     return files_data
 
 
@@ -46,6 +48,7 @@ async def retrieve_files():
 async def retrieve_file(title: str) -> dict:
     file = await file_collection.find_one({"title": title})
     if file:
+        
         return xmldata_helper(file)
 
 

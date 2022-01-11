@@ -3,7 +3,13 @@ from io import BytesIO
 from zipfile import ZipFile
 from xml.etree.ElementTree import fromstring, ElementTree
 import multiprocessing as mp
-from server.database import do_insert_many
+from server.database import do_insert_many, add_file
+from fastapi.encoders import jsonable_encoder
+from pymongo import MongoClient
+
+mongo_client = MongoClient('localhost', 27017)
+db = mongo_client.file_manager
+col = db.file_coll1
 
 def read_files(url):
     url_parts = url_splitter(url)
@@ -64,21 +70,25 @@ def render_files(files_list):
     #     print(file)
     
     with mp.Pool() as pool:
-        res = pool.map(render_file_data, files_list[0:2])
+        res = pool.map(render_file_data, files_list[4:7])
+        col.insert_many(res)
     
-    print('size: ', len(res))
-
-    print('res: ', res)
-    
-    do_insert_many(res)
-
-    print(len(res))
+    # print('res: ', res[0])
+    # json_data = json.dumps(res)
+    # json_data)
 
 
 def render_file_data(xml_tuple):
     tree=tree=ElementTree(fromstring(xml_tuple[1]))
     root=tree.getroot()
     data = {}
+
+    # extract title
+    title = root.find('.//invention-title')
+    if title:
+        data['file_title'] = title.text
+    else:
+        data['file_title'] = None
 
     # extract description
     description = root.find('description')
@@ -89,24 +99,8 @@ def render_file_data(xml_tuple):
                 des_text += str(c.text)
 
         data['description'] = des_text
-
-    # extract application
-    application = root.findall('.//application-reference')
-    if application:
-        app_parsed = parseXmlToJson(application)
-        data['application'] = app_parsed['application-reference']
-
-    # extract title
-    title = root.find('.//invention-title')
-    if title:
-        data['title'] = title.text
-
-    # extract publication year
-    publication_date = root.findall('.//publication-of-grant-date//date')
-    if publication_date:
-        year = publication_date[0].text[0: 4]
-        parsed_year = {'publication_year': year}
-        data.update(parsed_year)
+    else:
+        data['description'] = None
 
     # extract abstract
     abstract = root.findall('.//abstract')
@@ -116,7 +110,26 @@ def render_file_data(xml_tuple):
             for c in txt.iter():
                 text += c.tail
         data['abstract'] = text
-        data['file_nam'] = xml_tuple[0]
+    else:
+        data['abstract'] = None
+
+    # extract publication year
+    publication_date = root.findall('.//publication-of-grant-date//date')
+    if publication_date:
+        year = publication_date[0].text[0: 4]
+        data['publication_year'] = year
+    else:
+        data['publication_year'] = None
+
+    # extract application
+    application = root.findall('.//application-reference')
+    if application:
+        app_parsed = parseXmlToJson(application)
+        data['application'] = app_parsed['application-reference']
+    else:
+        data['application'] = None
+
+    data['file_name'] = xml_tuple[0]
 
     return data
 

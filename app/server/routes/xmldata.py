@@ -37,3 +37,15 @@ async def add_file_data(file: FileSchema = Body(...)):
     file = jsonable_encoder(file)
     new_file = await add_file(file)
     return ResponseModel(new_file, "File added successfully.")
+
+
+@router.delete("/{id}", response_description="File data deleted from the database")
+async def delete_file_data(id: str):
+    deleted_file = await delete_file(id)
+    if deleted_file:
+        return ResponseModel(
+            "File with ID: {} removed".format(id), "File deleted successfully"
+        )
+    return ErrorResponseModel(
+        "An error occurred", 404, "File with id {0} doesn't exist".format(id)
+    )

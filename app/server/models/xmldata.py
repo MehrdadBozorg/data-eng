@@ -9,6 +9,7 @@ class FileSchema(BaseModel):
     abstract: Optional[str] 
     publication_year: Optional[int] 
     application: Optional[list]  
+    file_name: str = Field(...)
 
     class Config:
         schema_extra = {
@@ -18,6 +19,7 @@ class FileSchema(BaseModel):
                 "abstract": "Water resources engineering",
                 "publication_year": 2,
                 "application": ["3.0"],
+                "file_name": "example.xml"
             }
         }
 
