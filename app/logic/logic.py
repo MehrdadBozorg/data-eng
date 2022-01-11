@@ -1,8 +1,9 @@
-from typing import Protocol
 from azure.storage.blob import BlobServiceClient
 from io import BytesIO
 from zipfile import ZipFile
-from xml.dom import minidom
+from xml.etree.ElementTree import fromstring, ElementTree
+import multiprocessing as mp
+from server.database import do_insert_many
 
 def read_files(url):
     url_parts = url_splitter(url)
@@ -20,17 +21,22 @@ def read_files(url):
         container_name, blob_name, snapshot=None)
 
     # TODO Error handling message 
-    blob_data = blob_client_instance.download_blob()
-    data = blob_data.readall()
 
+    blob_data = blob_client_instance.download_blob()
+    
+    
+    data = blob_data.readall()
 
     inmem = BytesIO(data)
     myzip = ZipFile(inmem)
 
-    file_dict = {name: myzip.read(name) for name in myzip.namelist()}
-    file_number = len(file_dict)
+    file_list = [(name, myzip.read(name)) for name in myzip.namelist()]
+    file_number = len(file_list)
 
     result_message = {'Rendered Files': file_number, 'Message': 'Ok' if file_number > 0 else 'Error' }
+
+    render_files(file_list)
+
 
     return(result_message, "Files are retrieved successfully")
 
@@ -53,4 +59,81 @@ def url_splitter(url):
     }
 
 
- 
+def render_files(files_list):
+    # for file in files_dict:
+    #     print(file)
+    
+    with mp.Pool() as pool:
+        res = pool.map(render_file_data, files_list[0:2])
+    
+    print('size: ', len(res))
+
+    print('res: ', res)
+    
+    do_insert_many(res)
+
+    print(len(res))
+
+
+def render_file_data(xml_tuple):
+    tree=tree=ElementTree(fromstring(xml_tuple[1]))
+    root=tree.getroot()
+    data = {}
+
+    # extract description
+    description = root.find('description')
+    if description:
+        des_text = ""
+        for txt in description:
+            for c in txt.iter():
+                des_text += str(c.text)
+
+        data['description'] = des_text
+
+    # extract application
+    application = root.findall('.//application-reference')
+    if application:
+        app_parsed = parseXmlToJson(application)
+        data['application'] = app_parsed['application-reference']
+
+    # extract title
+    title = root.find('.//invention-title')
+    if title:
+        data['title'] = title.text
+
+    # extract publication year
+    publication_date = root.findall('.//publication-of-grant-date//date')
+    if publication_date:
+        year = publication_date[0].text[0: 4]
+        parsed_year = {'publication_year': year}
+        data.update(parsed_year)
+
+    # extract abstract
+    abstract = root.findall('.//abstract')
+    if abstract:
+        text = ''
+        for txt in abstract:
+            for c in txt.iter():
+                text += c.tail
+        data['abstract'] = text
+        data['file_nam'] = xml_tuple[0]
+
+    return data
+
+
+def parseXmlToJson(xml):
+    response = {}
+  
+    for child in list(xml):
+        if len(list(child)) > 0:
+            if child.tag in response:
+                response[child.tag].append(parseXmlToJson(child))
+            else: 
+                response[child.tag] = [parseXmlToJson(child)]
+        else:
+            if child.tag in response:
+                response[child.tag].append([child.text] or [''])
+            else: 
+                response[child.tag] = [child.text] or ['']
+
+    return response

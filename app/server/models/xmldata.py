@@ -4,38 +4,23 @@ from pydantic import BaseModel, Field
 
 
 class FileSchema(BaseModel):
-    title: str = Field
-    description: str = Field
-    abstract: str = Field
-    publication_year: int = Field
-    application: list = []
+    file_title: Optional[str] 
+    description: Optional[str] 
+    abstract: Optional[str] 
+    publication_year: Optional[int] 
+    application: Optional[list]  
 
     class Config:
         schema_extra = {
             "example": {
-                "title": "title",
-                "description": "description",
-                "abstract": "abstract",
-                "publication_year": 2022,
-                "application": [
-                    {'document-id': [
-                        {'country': ['US'
-                                     ], 'doc-number': ['08631885'
-                                                       ], 'kind': ['A'
-                                                                   ], 'date': ['19960416'
-                                                                               ]
-                         },
-                        {'doc-number': ['1996US-08631885'
-                                        ]
-                         },
-                        {'doc-number': ['68290266'
-                                        ]
-                         }
-                    ]
-                    }
-                ]
+                "file_title": "John Doe",
+                "description": "jdoe@x.edu.ng",
+                "abstract": "Water resources engineering",
+                "publication_year": 2,
+                "application": ["3.0"],
             }
         }
+
 
 
 def ResponseModel(data, message):

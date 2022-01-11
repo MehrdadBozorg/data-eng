@@ -1,8 +1,10 @@
 from fastapi import FastAPI
-
+from server.routes.xmldata import router as FileRouter
 from logic.logic import read_files
 
 app = FastAPI()
+
+app.include_router(FileRouter, tags=["Files"], prefix="/file")
 
 
 @app.get("/", tags=["Root"])
@@ -16,5 +18,4 @@ async def read_blob(url: str):
     # Use Pymongo and Bul insert
     # Better to call function in a logic module. So create this folder.
 
-    result = read_files(url)
-    return result
+    return read_files(url)
