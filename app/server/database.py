@@ -7,13 +7,13 @@ client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_DETAILS)
 
 database = client.file_manager
 
-file_collection = database.get_collection("file_coll1")
+file_collection = database.get_collection("file_collection")
 
 
 def xmldata_helper(xmldata) -> dict:
     return {
         "id": str(xmldata["_id"]),
-        "file_title": xmldata["file_title"],
+        "patent_title": xmldata["patent_title"],
         "description": xmldata["description"],
         "abstract": xmldata["abstract"],
         "publication_year": xmldata["publication_year"],
@@ -22,14 +22,8 @@ def xmldata_helper(xmldata) -> dict:
     }
 
 
-def do_insert_many(file_list):
-    result = file_collection.insert_many(
-        file_list)
-    return {'msg': result}
-
-
 # Add a new file into to the database
-async def add_file(file_data: dict) -> dict:
+async def insert_one_file(file_data: dict) -> dict:
     file = await file_collection.insert_one(file_data)
     new_file = await file_collection.find_one({"_id": file.inserted_id})
     return xmldata_helper(new_file)
@@ -40,7 +34,6 @@ async def retrieve_files():
     files_data = []
     async for file in file_collection.find():
         files_data.append(xmldata_helper(file))
-    print('files are: ', files_data)
     return files_data
 
 
@@ -48,7 +41,6 @@ async def retrieve_files():
 async def retrieve_file(title: str) -> dict:
     file = await file_collection.find_one({"title": title})
     if file:
-        
         return xmldata_helper(file)
 
 

@@ -1,10 +1,9 @@
 from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
 class FileSchema(BaseModel):
-    file_title: Optional[str] 
+    patent_title: Optional[str] 
     description: Optional[str] 
     abstract: Optional[str] 
     publication_year: Optional[int] 
@@ -14,7 +13,7 @@ class FileSchema(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "file_title": "John Doe",
+                "patent_title": "John Doe",
                 "description": "jdoe@x.edu.ng",
                 "abstract": "Water resources engineering",
                 "publication_year": 2,
@@ -22,7 +21,6 @@ class FileSchema(BaseModel):
                 "file_name": "example.xml"
             }
         }
-
 
 
 def ResponseModel(data, message):

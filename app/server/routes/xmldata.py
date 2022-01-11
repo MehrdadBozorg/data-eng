@@ -5,7 +5,7 @@ from server.database import (
     delete_file,
     retrieve_file,
     retrieve_files,
-    add_file
+    insert_one_file
 )
 from server.models.xmldata import (
     ErrorResponseModel,
@@ -35,7 +35,7 @@ async def get_file_data(title):
 @router.post("/", response_description="File data added into the database")
 async def add_file_data(file: FileSchema = Body(...)):
     file = jsonable_encoder(file)
-    new_file = await add_file(file)
+    new_file = await insert_one_file(file)
     return ResponseModel(new_file, "File added successfully.")
 
 

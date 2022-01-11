@@ -3,13 +3,12 @@ from io import BytesIO
 from zipfile import ZipFile
 from xml.etree.ElementTree import fromstring, ElementTree
 import multiprocessing as mp
-from server.database import do_insert_many, add_file
 from fastapi.encoders import jsonable_encoder
 from pymongo import MongoClient
 
 mongo_client = MongoClient('localhost', 27017)
 db = mongo_client.file_manager
-col = db.file_coll1
+col = db.file_collection
 
 def read_files(url):
     url_parts = url_splitter(url)
@@ -27,9 +26,7 @@ def read_files(url):
         container_name, blob_name, snapshot=None)
 
     # TODO Error handling message 
-
     blob_data = blob_client_instance.download_blob()
-    
     
     data = blob_data.readall()
 
@@ -40,9 +37,7 @@ def read_files(url):
     file_number = len(file_list)
 
     result_message = {'Rendered Files': file_number, 'Message': 'Ok' if file_number > 0 else 'Error' }
-
     render_files(file_list)
-
 
     return(result_message, "Files are retrieved successfully")
 
@@ -56,7 +51,6 @@ def url_splitter(url):
     blob_name = name_query_split[0]
     account_key = name_query_split[1]
 
-
     return {
         'account_url': account_url,
         'container_name': containder_name,
@@ -66,16 +60,10 @@ def url_splitter(url):
 
 
 def render_files(files_list):
-    # for file in files_dict:
-    #     print(file)
     
     with mp.Pool() as pool:
-        res = pool.map(render_file_data, files_list[4:7])
+        res = pool.map(render_file_data, files_list)
         col.insert_many(res)
-    
-    # print('res: ', res[0])
-    # json_data = json.dumps(res)
-    # json_data)
 
 
 def render_file_data(xml_tuple):
@@ -86,9 +74,9 @@ def render_file_data(xml_tuple):
     # extract title
     title = root.find('.//invention-title')
     if title:
-        data['file_title'] = title.text
+        data['patent_title'] = title.text
     else:
-        data['file_title'] = None
+        data['patent_title'] = None
 
     # extract description
     description = root.find('description')

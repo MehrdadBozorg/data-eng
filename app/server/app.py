@@ -14,8 +14,5 @@ async def read_root():
 
 @app.get("/files/", response_description="File names")
 async def read_blob(url: str):
-    # Add your code in multiprocessing and...
-    # Use Pymongo and Bul insert
-    # Better to call function in a logic module. So create this folder.
 
     return read_files(url)
