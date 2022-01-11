@@ -3,7 +3,6 @@ from io import BytesIO
 from zipfile import ZipFile
 from xml.etree.ElementTree import fromstring, ElementTree
 import multiprocessing as mp
-from fastapi.encoders import jsonable_encoder
 from pymongo import MongoClient
 
 
