@@ -12,7 +12,7 @@ To cover the scalability in the number of blobs, asyncio (kind of threading) app
 
 Saving files in database is done with one insertion, which does not need any parallelization. However, to handle the user interactions with database (retrieving and deleting file records), I got benefited from motor library to support [asyncio](https://docs.python.org/3.8/library/asyncio.html).
 
-I used MongoDB in this application, to support schema flexibility in expansion, however, in any snapshot of the system, the data schema for file collection is defined and will be revised by changing the interested information to be extracted.
+I used MongoDB in this application, to support schema flexibility in expansion.
 
 Unzipping the blob is done in memory (and not in disk) to prevent extra I/O operations.
  
