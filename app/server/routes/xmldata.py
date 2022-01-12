@@ -9,7 +9,6 @@ from server.database import (
 from server.models.xmldata import (
     ErrorResponseModel,
     ResponseModel,
-    FileSchema,
 )
 
 router = APIRouter()

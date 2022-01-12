@@ -94,8 +94,6 @@ def render_file_data(xml_tuple: tuple) -> dict:
     title = root.find('.//invention-title')
     if title:
         data['patent_title'] = title.text
-    else:
-        data['patent_title'] = None
 
     # extract description
     description = root.find('description')
@@ -106,8 +104,6 @@ def render_file_data(xml_tuple: tuple) -> dict:
                 des_text += str(c.text)
 
         data['description'] = des_text
-    else:
-        data['description'] = None
 
     # extract abstract
     abstract = root.findall('.//abstract')
@@ -117,24 +113,19 @@ def render_file_data(xml_tuple: tuple) -> dict:
             for c in txt.iter():
                 text += c.tail
         data['abstract'] = text
-    else:
-        data['abstract'] = None
 
     # extract publication year
     publication_date = root.findall('.//publication-of-grant-date//date')
     if publication_date:
         year = publication_date[0].text[0: 4]
         data['publication_year'] = year
-    else:
-        data['publication_year'] = None
+
 
     # extract application
     application = root.findall('.//application-reference')
     if application:
         app_parsed = parseXmlToJson(application)
         data['application'] = app_parsed['application-reference']
-    else:
-        data['application'] = None
 
     # add the name of the file as a field in the data document.
     data['file_name'] = xml_tuple[0]

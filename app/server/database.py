@@ -18,15 +18,13 @@ def xmldata_helper(xmldata: dict) -> dict:
 
     :rturn, the the data as a json (dictionary) with wel-defined schema.
     """
-    return {
-        "id": str(xmldata["_id"]),
-        "patent_title": xmldata["patent_title"],
-        "description": xmldata["description"],
-        "abstract": xmldata["abstract"],
-        "publication_year": xmldata["publication_year"],
-        "application": xmldata["application"],
-        "file_name": xmldata["file_name"],
-    }
+    schema = {}
+    schema["id"] = str(xmldata["_id"])
+    for key in xmldata:
+        if key != "_id":
+            schema[key] = xmldata[key]
+
+    return schema
 
 
 async def retrieve_files() -> list:
