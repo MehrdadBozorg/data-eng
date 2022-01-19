@@ -45,7 +45,7 @@ async def retrieve_file(title: str) -> dict:
 
     :return, the retrieved file data as json(dictionary).
     """
-    file = await file_collection.find_one({"file_title": title})
+    file = await file_collection.find_one({"file_name": title})
     if file:
         return xmldata_helper(file)
 
